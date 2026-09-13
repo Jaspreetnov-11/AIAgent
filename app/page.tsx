@@ -47,7 +47,7 @@ export default function PromptStudio() {
 
   return (
     <main className="wrap">
-      <Hero title="One idea. Every AI tool." sub="Turn your brief into ready-to-use prompts." />
+      <Hero title="Prompts" sub="One brief in. A ready-to-paste prompt for every AI tool you pick." />
 
       <div className="cols">
         <div className="stack">

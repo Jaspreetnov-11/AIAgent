@@ -1,14 +1,19 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { Mascot, Mark } from "@/components/Mascot";
 
 type Status = { provider: "gemini" | "anthropic" | "none"; model: string };
 
-const TABS = [
-  { href: "/", label: "Prompts" },
-  { href: "/content", label: "Content" },
-  { href: "/schedule", label: "Schedule" },
+const NAV: [string, string, ReactNode][] = [
+  ["/", "Prompts", <NavIcon key="p" d="M4 6h16M4 12h10M4 18h14" />],
+  ["/content", "Content", <NavIcon key="c" d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />],
+  ["/schedule", "Schedule", <NavIcon key="s" d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />],
 ];
+
+function NavIcon({ d }: { d: string }) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>;
+}
 
 export default function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
@@ -17,45 +22,49 @@ export default function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetch("/api/prompts").then((r) => r.json()).then(setStatus).catch(() => setStatus({ provider: "none", model: "" }));
-    // ?embed=1 hides the header and footer so the page can sit inside another app's iframe.
+    // ?embed=1 hides the shell so a page can sit inside Lighthouse's own layout.
     try { setEmbed(new URLSearchParams(window.location.search).get("embed") === "1"); } catch {}
   }, []);
 
-  if (embed) return <>{children}</>;
+  if (embed) return <div className="content">{children}</div>;
 
-  const label = !status ? "Connecting" : status.provider === "gemini" ? "Gemini connected" : status.provider === "anthropic" ? "Claude connected" : "No key · demo";
+  const live = status && status.provider !== "none";
+  const label = !status ? "Connecting…" : status.provider === "gemini" ? "Live · Gemini" : status.provider === "anthropic" ? "Live · Claude" : "No key · demo mode";
 
   return (
-    <>
-      <header className="topbar">
-        <div className="topbar-in">
-          <a className="logo" href="/">
-            <svg viewBox="0 0 40 40" fill="none" stroke="var(--cyan)" strokeWidth="2.2" aria-hidden>
-              <path d="M20 3 35 11.5v17L20 37 5 28.5v-17L20 3z" />
-              <path d="M20 11 28 15.5v9L20 29l-8-4.5v-9L20 11z" opacity=".7" />
-            </svg>
-            <span>Prompt studio</span>
-          </a>
-          <nav className="tabs">
-            {TABS.map((t) => (
-              <a key={t.href} href={t.href} className={path === t.href ? "on" : ""}>{t.label}</a>
-            ))}
-          </nav>
-          <div className="top-right">
-            <span className="pill-status" title={status?.model || ""}>
-              <span className={`dot ${status && status.provider === "none" ? "off" : ""}`} />
-              <span className="lbl">{label}</span>
-              <span className="chev">▾</span>
-            </span>
-            <span className="vbar" />
-            <span className="avatar" aria-label="Limelight">L</span>
-          </div>
+    <div className="app">
+      <aside className="side">
+        <div className="side-logo">
+          <a href="/" className="brand"><img src="/logo.png" alt="limelight" /></a>
         </div>
-      </header>
-      {children}
-      <footer className="foot">
-        <span className="deco"><i />Ideas across intelligence</span>
-      </footer>
-    </>
+        <nav className="nav">
+          {NAV.map(([href, label, icon]) => (
+            <a key={href} href={href} className={path === href ? "active" : ""}>{icon}<span>{label}</span></a>
+          ))}
+        </nav>
+        <div className="side-mascot" aria-hidden><Mascot /></div>
+      </aside>
+
+      <div className="main">
+        <header className="topbar">
+          <span className="mark"><Mark /></span>
+          <span className={`sync ${live ? "on" : "off"}`}><i /><span>{label}</span></span>
+          <a className="tb-btn tb-text-btn" href="/schedule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+            <span className="tb-text">Calendar</span>
+          </a>
+          <a className="tb-btn solid" href="/"><span className="tb-text">New brief</span><span className="tb-plus">+</span></a>
+          <span className="tb-btn tb-avatar"><span className="avatar">L</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="m6 9 6 6 6-6" /></svg></span>
+        </header>
+
+        <section className="screen">{children}</section>
+
+        <nav className="bnav" aria-label="Main">
+          {NAV.map(([href, label, icon]) => (
+            <a key={href} href={href} className={path === href ? "active" : ""}>{icon}<span>{label}</span></a>
+          ))}
+        </nav>
+      </div>
+    </div>
   );
 }

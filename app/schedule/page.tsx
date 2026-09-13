@@ -91,7 +91,7 @@ export default function ScheduleStudio() {
 
   return (
     <main className="wrap">
-      <Hero title="One campaign. A month of posts." sub="A posting calendar with captions ready, day by day." />
+      <Hero title="Schedule" sub="A posting calendar with captions ready, day by day." />
 
       <div className="cols">
         <div className="stack">

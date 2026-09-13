@@ -49,13 +49,8 @@ export function Hero({ title, sub }: { title: string; sub: string }) {
   return (
     <div className="hero">
       <div>
-        <h1>{title}</h1>
+        <h1>{title} <span className="i" title={sub}>i</span></h1>
         <p>{sub}</p>
-      </div>
-      <div className="hero-deco" aria-hidden>
-        <div className="deco"><span>Better prompts</span><span>Brighter ideas</span></div>
-        <i style={{ width: 56, height: 1, background: "var(--line2)" }} />
-        <div className="deco right"><span>Create</span><span>Faster</span><span>Together</span></div>
       </div>
     </div>
   );

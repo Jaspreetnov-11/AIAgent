@@ -43,7 +43,7 @@ export default function ContentStudio() {
 
   return (
     <main className="wrap">
-      <Hero title="One brief. Every post and ad." sub="Captions, hooks, hashtags and ad copy, written for each platform." />
+      <Hero title="Content" sub="Captions, hooks, hashtags and ad copy, written for each platform." />
 
       <div className="cols">
         <div className="stack">
