@@ -14,7 +14,7 @@ export function pickProvider(): { provider: Provider; model: string } {
   const forced = process.env.LLM_PROVIDER as Provider | undefined;
   const hasGemini = !!process.env.GEMINI_API_KEY?.trim();
   const hasClaude = !!process.env.ANTHROPIC_API_KEY?.trim();
-  const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+  const geminiModel = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
   const claudeModel = process.env.ANTHROPIC_MODEL ?? "claude-opus-5";
 
   if (forced === "gemini" && hasGemini) return { provider: "gemini", model: geminiModel };

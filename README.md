@@ -61,7 +61,7 @@ npm run dev                    # http://localhost:3000
 | Var | Notes |
 |---|---|
 | `GEMINI_API_KEY` | Free. Prompt writer. |
-| `GEMINI_MODEL` | default `gemini-2.5-flash` |
+| `GEMINI_MODEL` | default `gemini-3.6-flash` |
 | `LLM_PROVIDER` | `gemini` or `anthropic`; empty = auto |
 | `ANTHROPIC_API_KEY` | Paid. Image agent, or prompt writer if no Gemini key |
 | `OPENAI_API_KEY` | Paid. Image agent renders |
