@@ -16,7 +16,10 @@ const robotoMono = Roboto_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = { title: "Limelight · Design agent" };
+export const metadata: Metadata = {
+  title: "Limelight · Prompt studio",
+  description: "One brief in, a ready-to-paste prompt for every AI tool: GPT Image, Nano Banana, Higgsfield, Suno and more.",
+};
 
 export const viewport: Viewport = {
   width: "device-width",

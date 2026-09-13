@@ -1,62 +1,69 @@
-# Limelight design agent (Claude × GPT Image)
+# Limelight prompt studio + design agent
 
-A closed-loop design agent. Claude plays two roles, GPT Image renders, and the loop keeps going until the work clears a quality bar or you step in.
+Two tools in one Next.js app.
+
+## 1. Prompt studio (`/`) — free path
+
+One brief in. A ready-to-paste prompt for each AI tool you pick, written in that tool's own grammar. You paste them into the tools' free web apps, so nothing here costs money.
+
+| Tool | Kind | What the writer produces |
+|---|---|---|
+| ChatGPT · GPT Image | image | prose prompt, quoted text, aspect in words |
+| Gemini · Nano Banana | image | conversational create/edit instruction, aspect ratio |
+| Ideogram | image | text-first poster prompt, typography notes |
+| Higgsfield | video | one-shot 5–8 s prompt with camera move and preset |
+| Kling | video | full-scene text-to-video prompt, duration, aspect |
+| Suno | music | style line, title, tagged lyrics |
+| ElevenLabs | voice | voice note + voiceover script |
+
+The list lives in `lib/targets.ts`. Add a tool by adding an entry with its prompt guidance.
+
+**The writer itself** needs one LLM. Gemini's free tier works with no card:
+
+1. Get a key at https://aistudio.google.com/apikey
+2. Put it in `.env.local` as `GEMINI_API_KEY=...`
+3. `npm run dev`
+
+If only `ANTHROPIC_API_KEY` is set, Claude writes the prompts instead (paid per token, small amounts). With no key the page runs in demo mode and says so.
+
+## 2. Image agent (`/agent`) — paid path
+
+Claude art-directs, GPT Image renders, Claude critiques and revises until the work clears a bar. Needs `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`; both are paid. Quick mode (brief → prompt → image) is the default; the critique loop is a mode switch. Without keys it shows placeholder images and a banner.
 
 ```
-brief ──► art director (Claude) ──► spec ──► renderer (GPT Image) ──► N candidates
-                 ▲                                                        │
-                 │ direction                                              ▼
-                 └──────────── creative director / critic (Claude, vision) ◄┘
-                                          │
-                                  score ≥ threshold ──► done
-                                  else ──► next round (max N)
-                       your note ──► "Push it further" ──► art director again
+brief ──► art director (Claude) ──► spec ──► GPT Image ──► candidates
+                 ▲                                            │
+                 └──── direction ──── critic (Claude, vision) ◄┘
 ```
 
 ## Run
 
 ```
 npm install
-cp .env.example .env.local     # add both API keys
+cp .env.example .env.local     # add whichever keys you have
 npm run dev                    # http://localhost:3000
 ```
 
-## What each part does
+## Files
 
 | File | Role |
 |---|---|
-| `lib/brand.ts` | Brand + craft rules. The stable, cached prefix of every Claude call. Edit this to retrain the agent's taste. |
-| `lib/types.ts` | Zod schemas for the design spec and the critique, plus the event types streamed to the UI. |
-| `lib/claude.ts` | `planDesign`, `reviseDesign`, `critiqueCandidates`. Structured outputs via `messages.parse`, references and renders passed as images. Weighted totals are computed in code so scores are comparable across rounds. |
-| `lib/image.ts` | `renderCandidates`. Builds the final prompt from the spec (text, palette, avoid-list) and calls `images.generate`, or `images.edit` when a reference is flagged for compositing (logo, product). |
-| `lib/agent.ts` | The loop as an async generator: plan → render → critique → revise. Stops on pass, on empty direction, or at max rounds (best seen wins). Accepts `resume` for a human note. |
-| `app/api/agent` | POST, streams newline-delimited JSON events. Clamps rounds/candidates against `AGENT_MAX_*` so a client cannot run up the bill. |
-| `app/api/prompt`, `app/api/image` | Manual, single-step endpoints if you want to script the pieces yourself. |
-| `app/page.tsx` | Brief, references, loop settings, live candidates, approved result, round-by-round scorecards, and a feedback box that re-enters the loop. |
+| `lib/targets.ts` | The tools and how to write for each |
+| `lib/promptpack.ts` | Prompt-writer system prompt, output schema, demo output |
+| `lib/llm.ts` | One JSON call on Gemini (free) or Claude |
+| `app/api/prompts` | GET status, POST brief → prompt pack |
+| `lib/brand.ts` | Limelight brand + craft rules, shared by both tools |
+| `lib/agent.ts`, `lib/claude.ts`, `lib/image.ts` | The image agent loop |
+| `app/api/agent` | Streams the image agent's events |
 
-## How the critic scores
+## Env
 
-Five dimensions, 0–10 each: brief fidelity, brand, text accuracy, composition, craft. The total is weighted in `scoreCritique`; text carries 25 % when the spec requires rendered text and almost nothing otherwise. A round passes when the best total ≥ the threshold (default 8) or when the critic has no direction left.
-
-Text accuracy is checked letter by letter, because image models misspell non-Latin scripts. The art director is told to keep rendered text minimal and to leave space for typesetting when the brief allows.
-
-## Settings
-
-| Env | Default | Notes |
-|---|---|---|
-| `ANTHROPIC_MODEL` | `claude-opus-5` | Both Claude roles. |
-| `ANTHROPIC_EFFORT` | `high` | `low`–`max`. `medium` is a fine cost saver for the critic. |
-| `OPENAI_IMAGE_MODEL` | `gpt-image-2.5-flare` | `gpt-image-2.5-sunburst` for premium or edit-heavy work. |
-| `AGENT_MAX_ROUNDS` / `AGENT_MAX_CANDIDATES` | `4` / `3` | Hard caps enforced server-side. |
-
-Per run (in the UI): rounds, candidates per round, render quality, and the ship threshold.
-
-## Cost shape
-
-Each round is one art-director call, one render call with `n` candidates, and one critique call carrying `n` images. A 3-round, 2-candidate run at high quality is roughly 6 image renders and 6 Claude calls, worst case.
-
-## Next steps
-
-- Persist runs (spec, scores, images) so the critic can learn house preferences from approved work.
-- Split the critic across models (a cheap first pass, Opus for the final call) once you have an eval set of approved and rejected renders.
-- Add a mask tool so the client note can target a region and route through `images.edit` with a mask.
+| Var | Notes |
+|---|---|
+| `GEMINI_API_KEY` | Free. Prompt writer. |
+| `GEMINI_MODEL` | default `gemini-2.5-flash` |
+| `LLM_PROVIDER` | `gemini` or `anthropic`; empty = auto |
+| `ANTHROPIC_API_KEY` | Paid. Image agent, or prompt writer if no Gemini key |
+| `OPENAI_API_KEY` | Paid. Image agent renders |
+| `OPENAI_IMAGE_MODEL` | default `gpt-image-2.5-flare` |
+| `AGENT_MOCK` | `1` forces placeholder images in the image agent |

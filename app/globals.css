@@ -136,3 +136,32 @@ button:disabled { opacity: .4; cursor: default; }
   .refs .row.tight { flex-direction: column; align-items: flex-start; }
   .rh { margin-top: 32px; }
 }
+
+/* ---------- prompt studio ---------- */
+.nav { display: flex; gap: 6px; }
+.nav a { text-decoration: none; color: var(--mute); font-weight: 500; font-size: 14px; padding: 8px 12px; border-radius: 8px; min-height: var(--tap); display: inline-flex; align-items: center; }
+.nav a.on { color: var(--ink); background: var(--soft); }
+.provider { margin: -20px 0 24px; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tool { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; min-height: 56px; white-space: normal; font-weight: 400; }
+.tool.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tool.on .tool-name::before { content: "●"; color: var(--spark); margin-right: 6px; }
+.tool-name { font-weight: 500; }
+.tool-kind { font-size: 12px; color: var(--mute); }
+.pack .concept { font-size: 18px; margin: 0 0 14px; }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+.card header { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.card header strong { font-size: 15px; margin-right: 8px; }
+.badge.kind { background: var(--soft); color: var(--mute); font-weight: 500; }
+.prompt { white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55 var(--sans); background: var(--soft); padding: 12px; border-radius: 8px; margin: 0; }
+.extra { margin-top: 10px; }
+.extra-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
+.tip { margin: 10px 0 0; font-size: 13px; color: var(--mute); border-left: 3px solid var(--spark); padding-left: 10px; }
+button.small { min-height: 32px; padding: 0 10px; font-size: 13px; }
+@media (max-width: 600px) {
+  .tools { grid-template-columns: 1fr; }
+  .card header .row.tight { width: 100%; }
+  .card header .row.tight > * { flex: 1; }
+  .card header .row.tight a button { width: 100%; }
+  .provider { margin-top: -8px; }
+}
