@@ -21,6 +21,7 @@ function parseInput(body: any): AgentInput {
 
   const o = body?.options ?? {};
   const options: AgentOptions = {
+    mode: o.mode === "loop" ? "loop" : "quick",
     maxRounds: clampInt(o.maxRounds, 1, MAX_ROUNDS, Math.min(3, MAX_ROUNDS)),
     candidates: clampInt(o.candidates, 1, MAX_CANDIDATES, Math.min(2, MAX_CANDIDATES)),
     quality: (["low", "medium", "high"] as const).includes(o.quality) ? o.quality : "high",
@@ -51,6 +52,18 @@ function parseInput(body: any): AgentInput {
   return { brief, references, options, resume };
 }
 
+/** Mock when explicitly asked, or when either key is missing, so a fresh checkout never crashes. */
+function mockStatus() {
+  const missing = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"].filter((k) => !process.env[k]?.trim());
+  const forced = process.env.AGENT_MOCK === "1";
+  return { mock: forced || missing.length > 0, forced, missing };
+}
+
+/** GET: tells the UI whether real models will be used. */
+export async function GET() {
+  return NextResponse.json(mockStatus());
+}
+
 /** POST: runs the loop and streams newline-delimited JSON events. */
 export async function POST(req: Request) {
   let input: AgentInput;
@@ -64,7 +77,7 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        const run = process.env.AGENT_MOCK === "1" ? runMockAgent : runDesignAgent;
+        const run = mockStatus().mock ? runMockAgent : runDesignAgent;
         for await (const ev of run(input)) {
           controller.enqueue(enc.encode(JSON.stringify(ev) + "\n"));
           if (req.signal.aborted) break;

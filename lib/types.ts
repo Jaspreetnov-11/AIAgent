@@ -49,6 +49,7 @@ export type ReferenceImage = {
 };
 
 export type AgentOptions = {
+  mode: "quick" | "loop";   // quick: brief -> spec -> render, done. loop: adds critique + revise rounds.
   maxRounds: number;        // 1-4
   candidates: number;       // 1-3 renders per round
   quality: "low" | "medium" | "high";
@@ -69,5 +70,5 @@ export type AgentEvent =
   | { type: "image"; round: number; index: number; dataUrl: string }
   | { type: "image_error"; round: number; message: string }
   | { type: "critique"; round: number; critique: ScoredCritique }
-  | { type: "done"; round: number; index: number; dataUrl: string; spec: DesignSpec; total: number; reason: "passed" | "max_rounds" }
+  | { type: "done"; round: number; index: number; dataUrl: string; spec: DesignSpec; total: number; reason: "passed" | "max_rounds" | "quick" }
   | { type: "error"; round: number; message: string };

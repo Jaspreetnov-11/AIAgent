@@ -52,6 +52,12 @@ export async function* runDesignAgent(input: AgentInput): AsyncGenerator<AgentEv
       }
       for (let i = 0; i < images.length; i++) yield { type: "image", round, index: i, dataUrl: images[i] };
 
+      // Quick mode: no critique, hand back the first render.
+      if (options.mode === "quick") {
+        yield { type: "done", round, index: 0, dataUrl: images[0], spec, total: 0, reason: "quick" };
+        return;
+      }
+
       // 3. Critique.
       yield { type: "status", round, message: "Creative director is reviewing…" };
       const critique = await critiqueCandidates({ brief, spec, images, refs, threshold: options.threshold });

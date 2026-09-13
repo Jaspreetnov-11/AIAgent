@@ -42,6 +42,11 @@ export async function* runMockAgent(input: AgentInput): AsyncGenerator<AgentEven
       yield { type: "image", round, index: i, dataUrl: svg(spec.size, `R${round} · C${i + 1}`, tones[(round + i) % tones.length]) };
     }
 
+    if (options.mode === "quick") {
+      yield { type: "done", round, index: 0, dataUrl: svg(spec.size, `R${round} · C1`, tones[round % tones.length]), spec, total: 0, reason: "quick" };
+      return;
+    }
+
     yield { type: "status", round, message: "Creative director is reviewing…" };
     await sleep(800);
     const lift = (round - 1) * 1.2;

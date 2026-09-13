@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AgentEvent, AgentOptions, DesignSpec, ReferenceImage, ScoredCritique } from "@/lib/types";
 
 type RoundView = {
@@ -10,9 +10,10 @@ type RoundView = {
   imageError?: string;
   critique?: ScoredCritique;
 };
-type Best = { round: number; index: number; dataUrl: string; spec: DesignSpec; total: number; reason: "passed" | "max_rounds" };
+type Best = { round: number; index: number; dataUrl: string; spec: DesignSpec; total: number; reason: "passed" | "max_rounds" | "quick" };
+type MockInfo = { mock: boolean; forced: boolean; missing: string[] };
 
-const DEFAULTS: AgentOptions = { maxRounds: 3, candidates: 2, quality: "high", threshold: 8 };
+const DEFAULTS: AgentOptions = { mode: "quick", maxRounds: 3, candidates: 1, quality: "high", threshold: 8 };
 
 export default function Studio() {
   const [brief, setBrief] = useState("");
@@ -24,8 +25,14 @@ export default function Studio() {
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [running, setRunning] = useState(false);
+  const [mockInfo, setMockInfo] = useState<MockInfo | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const offsetRef = useRef(0);
+  const quick = options.mode === "quick";
+
+  useEffect(() => {
+    fetch("/api/agent").then((r) => r.json()).then(setMockInfo).catch(() => setMockInfo(null));
+  }, []);
 
   // ---- references ----
   function addFiles(files: FileList | null) {
@@ -122,6 +129,15 @@ export default function Studio() {
         </div>
       </header>
 
+      {mockInfo?.mock && (
+        <div className="notice" role="status">
+          <strong>Demo mode, no real images.</strong>{" "}
+          {mockInfo.missing.length > 0
+            ? <>Add {mockInfo.missing.join(" and ")} to <code>.env.local</code> and restart <code>npm run dev</code>.</>
+            : <>Set <code>AGENT_MOCK=0</code> in <code>.env.local</code> and restart <code>npm run dev</code>.</>}
+        </div>
+      )}
+
       <div className="grid">
         {/* ------------------------------------------------ left: brief + controls */}
         <section>
@@ -168,14 +184,22 @@ export default function Studio() {
           </div>
 
           <div className="step">
-            <h2>Loop</h2>
+            <h2>Mode</h2>
             <div className="opts">
-              <label>Rounds
-                <select value={options.maxRounds} disabled={running} onChange={(e) => setOptions({ ...options, maxRounds: Number(e.target.value) })}>
-                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+              <label className="span2">How it runs
+                <select value={options.mode} disabled={running} onChange={(e) => setOptions({ ...options, mode: e.target.value as AgentOptions["mode"] })}>
+                  <option value="quick">Quick: brief → prompt → image</option>
+                  <option value="loop">Agent loop: render, critique, revise</option>
                 </select>
               </label>
-              <label>Candidates / round
+              {!quick && (
+                <label>Rounds
+                  <select value={options.maxRounds} disabled={running} onChange={(e) => setOptions({ ...options, maxRounds: Number(e.target.value) })}>
+                    {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+              )}
+              <label>{quick ? "Images" : "Candidates / round"}
                 <select value={options.candidates} disabled={running} onChange={(e) => setOptions({ ...options, candidates: Number(e.target.value) })}>
                   {[1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
@@ -187,17 +211,19 @@ export default function Studio() {
                   <option value="high">high</option>
                 </select>
               </label>
-              <label>Ship at
-                <select value={options.threshold} disabled={running} onChange={(e) => setOptions({ ...options, threshold: Number(e.target.value) })}>
-                  {[7, 7.5, 8, 8.5, 9].map((n) => <option key={n} value={n}>{n} / 10</option>)}
-                </select>
-              </label>
+              {!quick && (
+                <label>Ship at
+                  <select value={options.threshold} disabled={running} onChange={(e) => setOptions({ ...options, threshold: Number(e.target.value) })}>
+                    {[7, 7.5, 8, 8.5, 9].map((n) => <option key={n} value={n}>{n} / 10</option>)}
+                  </select>
+                </label>
+              )}
             </div>
             <div className="row">
               {running ? (
                 <button className="ghost" onClick={stop}>Stop</button>
               ) : (
-                <button onClick={() => run()} disabled={!brief.trim()}>Run agent</button>
+                <button onClick={() => run()} disabled={!brief.trim()}>{quick ? "Generate" : "Run agent"}</button>
               )}
               {status && <span className="status"><span className="dot" />{status}</span>}
             </div>
@@ -221,8 +247,8 @@ export default function Studio() {
             <div className="result">
               <div className="row between">
                 <div>
-                  <span className={`badge ${best.reason === "passed" ? "ok" : "warn"}`}>
-                    {best.reason === "passed" ? "Approved" : "Best of run"} · {best.total.toFixed(1)} / 10
+                  <span className={`badge ${best.reason === "max_rounds" ? "warn" : "ok"}`}>
+                    {best.reason === "quick" ? "Rendered" : best.reason === "passed" ? `Approved · ${best.total.toFixed(1)} / 10` : `Best of run · ${best.total.toFixed(1)} / 10`}
                   </span>
                   <span className="meta"> round {best.round}, candidate {best.index + 1} · {best.spec.size}</span>
                 </div>
@@ -308,7 +334,7 @@ function RoundCard({ r, best }: { r: RoundView; best: Best | null }) {
                 <figcaption>
                   <div className="row between">
                     <strong>#{i + 1}{isRoundBest ? " · pick" : ""}</strong>
-                    {s ? <span className="score">{s.total.toFixed(1)}</span> : r.critique ? null : <span className="meta">reviewing…</span>}
+                    {s ? <span className="score">{s.total.toFixed(1)}</span> : null}
                   </div>
                   {s && (
                     <>
