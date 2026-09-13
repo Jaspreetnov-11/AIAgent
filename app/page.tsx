@@ -109,7 +109,7 @@ export default function PromptStudio() {
 
         <section>
           {!pack ? (
-            <div className="canvas"><p className="empty">{busy ? "Working…" : "Your prompts appear here."}</p></div>
+            <div className="canvas">{busy ? <Writing /> : <p className="empty">Your prompts appear here.</p>}</div>
           ) : (
             <div className="pack">
               <p className="concept">{pack.concept}</p>
@@ -152,6 +152,20 @@ export default function PromptStudio() {
         </section>
       </div>
     </main>
+  );
+}
+
+function Writing() {
+  return (
+    <div className="writing" role="status" aria-live="polite" aria-label="Writing">
+      <div className="writing-lines" aria-hidden>
+        <i /><i /><i /><i />
+        <span className="writing-cursor" />
+      </div>
+      <p className="writing-label" aria-hidden>
+        Writing<span className="writing-dots"><b>.</b><b>.</b><b>.</b></span>
+      </p>
+    </div>
   );
 }
 

@@ -165,3 +165,51 @@ button.small { min-height: 32px; padding: 0 10px; font-size: 13px; }
   .card header .row.tight a button { width: 100%; }
   .provider { margin-top: -8px; }
 }
+
+/* ---------- writing loader ---------- */
+.writing { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 48px 24px; width: 100%; max-width: 380px; }
+.writing-lines { position: relative; width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.writing-lines i {
+  display: block; height: 10px; border-radius: 5px; background: var(--ink); opacity: .14;
+  transform: scaleX(0); transform-origin: left center;
+  animation: write 2.8s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+.writing-lines i:nth-child(1) { width: 92%; animation-delay: 0s; }
+.writing-lines i:nth-child(2) { width: 68%; animation-delay: .35s; }
+.writing-lines i:nth-child(3) { width: 84%; animation-delay: .7s; }
+.writing-lines i:nth-child(4) { width: 46%; animation-delay: 1.05s; }
+@keyframes write {
+  0%   { transform: scaleX(0); opacity: .14; }
+  32%  { transform: scaleX(1); opacity: .14; }
+  78%  { transform: scaleX(1); opacity: .14; }
+  90%  { transform: scaleX(1); opacity: 0; }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+.writing-cursor {
+  position: absolute; left: 0; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: var(--spark);
+  box-shadow: 0 0 0 0 rgba(252, 211, 10, .6);
+  animation: cursor-move 2.8s cubic-bezier(.4, 0, .2, 1) infinite, cursor-glow 1.1s ease-in-out infinite alternate;
+  animation-delay: 1.05s, 0s;
+}
+@keyframes cursor-move {
+  0%   { left: 0; opacity: 0; }
+  5%   { opacity: 1; }
+  32%  { left: calc(46% + 4px); }
+  78%  { left: calc(46% + 4px); opacity: 1; }
+  90%  { opacity: 0; }
+  100% { left: 0; opacity: 0; }
+}
+@keyframes cursor-glow {
+  from { box-shadow: 0 0 0 0 rgba(252, 211, 10, .55); transform: scale(1); }
+  to   { box-shadow: 0 0 0 10px rgba(252, 211, 10, 0); transform: scale(1.15); }
+}
+.writing-label { margin: 0; font-weight: 500; letter-spacing: .02em; color: var(--ink); }
+.writing-dots b { display: inline-block; font-weight: 700; animation: dot 1.2s ease-in-out infinite; }
+.writing-dots b:nth-child(2) { animation-delay: .2s; }
+.writing-dots b:nth-child(3) { animation-delay: .4s; }
+@keyframes dot { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .writing-lines i { animation: none; transform: scaleX(1); }
+  .writing-cursor { animation: cursor-glow 1.4s ease-in-out infinite alternate; left: calc(46% + 4px); }
+  .writing-dots b { animation: none; opacity: 1; }
+}
