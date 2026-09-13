@@ -13,10 +13,15 @@ const TABS = [
 export default function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [status, setStatus] = useState<Status | null>(null);
+  const [embed, setEmbed] = useState(false);
 
   useEffect(() => {
     fetch("/api/prompts").then((r) => r.json()).then(setStatus).catch(() => setStatus({ provider: "none", model: "" }));
+    // ?embed=1 hides the header and footer so the page can sit inside another app's iframe.
+    try { setEmbed(new URLSearchParams(window.location.search).get("embed") === "1"); } catch {}
   }, []);
+
+  if (embed) return <>{children}</>;
 
   const label = !status ? "Connecting" : status.provider === "gemini" ? "Gemini connected" : status.provider === "anthropic" ? "Claude connected" : "No key · demo";
 
