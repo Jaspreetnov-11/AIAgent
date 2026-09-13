@@ -57,8 +57,25 @@ export async function generateJSON<S extends z.ZodTypeAny>(args: {
 
   if (provider === "gemini") {
     const raw = await gemini(system, user, model);
-    const parsed = schema.safeParse(JSON.parse(stripFences(raw)));
-    if (!parsed.success) throw new Error("Gemini returned JSON in the wrong shape. Try again.");
+    let json: unknown;
+    try {
+      json = JSON.parse(stripFences(raw));
+    } catch {
+      throw new Error("Gemini returned text that is not JSON. Try again.");
+    }
+    // Some responses wrap the object in a single top-level key; unwrap that.
+    if (json && typeof json === "object" && !Array.isArray(json)) {
+      const keys = Object.keys(json as object);
+      if (keys.length === 1 && typeof (json as any)[keys[0]] === "object") {
+        const inner = (json as any)[keys[0]];
+        if (!schema.safeParse(json).success && schema.safeParse(inner).success) json = inner;
+      }
+    }
+    const parsed = schema.safeParse(json);
+    if (!parsed.success) {
+      const why = parsed.error.issues.slice(0, 3).map((i) => `${i.path.join(".") || "root"}: ${i.message}`).join("; ");
+      throw new Error(`Gemini returned JSON in the wrong shape (${why}). Try again.`);
+    }
     return { data: parsed.data, provider, model };
   }
 
